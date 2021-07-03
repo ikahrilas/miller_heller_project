@@ -72,11 +72,5 @@ names(eeg_dat) <- str_remove(names(eeg_dat), "-M1'")
 #' finally, merge the event and erp data together and output csv file
 #+ merge the data together
 dat <- full_join(evt, eeg_dat, by = "pid")
-# wide format
+# csv file
 write_csv(dat, "data_wide.csv")
-# long format
-dat %>%
-  pivot_longer(cols = c(EEG1:EEG58),
-               names_to = "elec",
-               values_to = "mv") %>% 
-  write_csv("data_long.csv")
