@@ -14,9 +14,23 @@ library(data.table)
 #'
 #' create vector with file names
 #+ vector of all files in working directory
-# actual file paths
-files_mul <- glue("CW_Exported_Files/CW_{c(401, 404, 406, 409)}/CW{c(532401, 583404, 565406, 526409)}_av-export.mul") # mul files
-files_evt <- glue("CW_Exported_Files/CW_{c(401, 404, 406, 409)}/CW{c(532401, 583404, 565406, 526409)}_av-export.evt") # evt files
+# object with all file names
+## pids
+pids <- list.files(here("Preprocessed_CW_EEG_Data", "Preprocessed_CTQ_Sample"))[c(-106, -109)]
+
+## mul files
+mul_files <- map_chr(pids, ~ {
+  list.files(here("Preprocessed_CW_EEG_Data", "Preprocessed_CTQ_Sample", .x)) |> str_subset(".mul")
+  })
+
+## evt files
+evt_files <- map_chr(pids, ~ {
+  list.files(here("Preprocessed_CW_EEG_Data", "Preprocessed_CTQ_Sample", .x)) |> str_subset(".evt")
+})
+
+# full file paths
+files_mul <- glue("Preprocessed_CW_EEG_Data/Preprocessed_CTQ_Sample/{pids}/{mul_files}") # mul files
+files_evt <- glue("Preprocessed_CW_EEG_Data/Preprocessed_CTQ_Sample/{pids}/{evt_files}") # evt files
 
 #' read in evt files as data frames
 #+ reading in the evt data
@@ -27,9 +41,17 @@ tot_trials <- c(64, 64, 62, 124, 32, 30, 32, 32, 64, 64, 124, 32, 32, 32, 32)
 # prepare parallelization
 plan(multisession, workers = 8)
 
+read_csv2(files_evt[1]) |> 
+  rename("block:n_trials" = `Tmu         \tCode\tTriNo\tComnt`) |>
+  separate(`block:n_trials`, into = c("block", "n_trials"), sep = ":") |>
+  mutate(n_trials = str_remove(n_trials, "avs"),
+         n_trials = as.numeric(n_trials),
+         prop_trials = n_trials / tot_trials)
+## pick up here - refine block variable
+
 # map function to read in data
 evt <- future_map(files_evt, ~ {
-  read_table(.x) |>
+  read_csv2(.x) |>
     select(-Tmu) |>
     rename("block:n_trials" = `Code\tTriNo\tComnt`) |>
     mutate(`block:n_trials` = str_remove(`block:n_trials`, "42\t200000\t")) |>
