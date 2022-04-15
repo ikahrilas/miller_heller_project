@@ -83,12 +83,12 @@ eeg_dat <- future_map_dfr(files_mul, ~ {
   read_table2(.x, skip = 1) %>% 
     mutate(
       pid = as.numeric(str_extract(.x, "[0-9]{3}")),
-      trial_type = rep(trial_names,
-                       each = (nrow(.) / length(trial_names))),
+      block = rep(trial_names,
+                  each = (nrow(.) / length(trial_names))),
       ms = rep(seq(-200, 1000,
                    by = ((1200 + (1200 / 300))/ 300)),
                times = 15)) |>
-      relocate(pid, trial_type, ms, everything())
+      relocate(pid, block, ms, everything())
 }
 )
 
@@ -98,7 +98,7 @@ names(eeg_dat)[64] <- "M1"
 
 #' finally, merge the event and erp data together and output csv file
 #+ merge the data together
-dat <- full_join(evt, eeg_dat, by = "pid")
+dat <- full_join(evt, eeg_dat, by = c("pid", "block"))
 
 # write csv file
 write_csv(dat, "data_wide.csv")
